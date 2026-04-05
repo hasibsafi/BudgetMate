@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "BudgetMate",
+    "slug": "budgetmate",
+    "newArchEnabled": true,
+    "scheme": "budgetmate",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F7F8"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.example.budgetmate"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F7F8"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

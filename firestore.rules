@@ -1,0 +1,58 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function userDoc(userId) {
+      return /databases/$(database)/documents/users/$(userId);
+    }
+
+    function hasHousehold(userId) {
+      return exists(userDoc(userId)) && get(userDoc(userId)).data.householdId != null;
+    }
+
+    function sameHousehold(userA, userB) {
+      return hasHousehold(userA)
+        && hasHousehold(userB)
+        && get(userDoc(userA)).data.householdId == get(userDoc(userB)).data.householdId;
+    }
+
+    function isHouseholdMember(householdId) {
+      return isSignedIn() && hasHousehold(request.auth.uid)
+        && get(userDoc(request.auth.uid)).data.householdId == householdId;
+    }
+
+    match /users/{userId} {
+      allow read: if isSelf(userId) || sameHousehold(request.auth.uid, userId);
+      allow create, update, delete: if isSelf(userId);
+    }
+
+    match /users/{userId}/{document=**} {
+      allow read: if isSelf(userId) || sameHousehold(request.auth.uid, userId);
+      allow write: if isSelf(userId);
+    }
+
+    match /households/{householdId} {
+      allow read: if isHouseholdMember(householdId);
+      allow create: if isSignedIn();
+      allow list: if isSignedIn();
+      allow update, delete: if isHouseholdMember(householdId);
+    }
+
+    match /households/{householdId}/members/{memberId} {
+      allow read: if isHouseholdMember(householdId);
+      allow create: if isSignedIn() && (isHouseholdMember(householdId) || request.auth.uid == memberId);
+      allow update, delete: if isHouseholdMember(householdId);
+    }
+
+    match /households/{householdId}/{document=**} {
+      allow read, write: if isHouseholdMember(householdId);
+    }
+  }
+}
