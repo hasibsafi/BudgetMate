@@ -1,5 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { colors } from "@/constants/colors";
+import { radii } from "@/constants/layout";
 
 interface ViewToggleProps {
   isPartnerView: boolean;
@@ -18,13 +20,17 @@ export function ViewToggle({
         style={[styles.button, !isPartnerView && styles.active]}
         onPress={() => onToggle(false)}
       >
-        <Text style={styles.text}>My Budget</Text>
+        <Text style={[styles.text, !isPartnerView ? styles.activeText : styles.inactiveText]}>
+          My Budget
+        </Text>
       </Pressable>
       <Pressable
         style={[styles.button, isPartnerView && styles.active, disabledPartner && styles.disabled]}
         onPress={() => !disabledPartner && onToggle(true)}
       >
-        <Text style={styles.text}>Partner View</Text>
+        <Text style={[styles.text, isPartnerView ? styles.activeText : styles.inactiveText]}>
+          Partner View
+        </Text>
       </Pressable>
     </View>
   );
@@ -34,8 +40,8 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: "#DCE5EA",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radii.md,
     overflow: "hidden"
   },
   button: {
@@ -44,12 +50,18 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   active: {
-    backgroundColor: "#DDF3F7"
+    backgroundColor: `${colors.primary}15`
   },
   disabled: {
     opacity: 0.5
   },
   text: {
     fontWeight: "700"
+  },
+  activeText: {
+    color: colors.primary
+  },
+  inactiveText: {
+    color: colors.textMuted
   }
 });

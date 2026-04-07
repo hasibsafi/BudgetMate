@@ -8,6 +8,8 @@ import { CategoryList } from "@/components/budget/CategoryList";
 import { NextMonthPreview } from "@/components/budget/NextMonthPreview";
 import { ViewToggle } from "@/components/budget/ViewToggle";
 import { PartnerBanner } from "@/components/ui/PartnerBanner";
+import { colors } from "@/constants/colors";
+import { spacing } from "@/constants/layout";
 import { useAuthStore } from "@/store/authStore";
 import { useBudgetStore } from "@/store/budgetStore";
 import { usePartnerStore } from "@/store/partnerStore";
@@ -139,10 +141,10 @@ export default function HomeScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#F6F8F9"
+    backgroundColor: colors.bg
   },
   content: {
-    padding: 16,
+    padding: spacing.lg,
     gap: 12
   }
 });

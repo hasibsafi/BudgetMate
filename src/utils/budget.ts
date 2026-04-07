@@ -21,3 +21,13 @@ export function formatCurrency(amount: number, currency: string = "USD"): string
     maximumFractionDigits: 2
   }).format(amount);
 }
+
+export function getAmountColor(amount: number): string {
+  if (amount < 0) {
+    return colors.danger;
+  }
+  if (amount > 0) {
+    return colors.success;
+  }
+  return colors.text;
+}
