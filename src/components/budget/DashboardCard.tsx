@@ -1,7 +1,8 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Card } from "@/components/ui/Card";
-import { formatCurrency } from "@/utils/budget";
+import { colors } from "@/constants/colors";
+import { formatCurrency, getAmountColor } from "@/utils/budget";
 
 interface DashboardCardProps {
   income: number;
@@ -18,14 +19,31 @@ export function DashboardCard({
   remaining,
   currency
 }: DashboardCardProps): React.JSX.Element {
+  const spentColor = variableSpent > 0 ? colors.danger : colors.text;
+
   return (
     <Card>
       <Text style={styles.title}>Month Summary</Text>
       <View style={styles.grid}>
-        <Text>Income: {formatCurrency(income, currency)}</Text>
-        <Text>Fixed: {formatCurrency(fixedTotal, currency)}</Text>
-        <Text>Spent: {formatCurrency(variableSpent, currency)}</Text>
-        <Text style={styles.remaining}>Remaining: {formatCurrency(remaining, currency)}</Text>
+        <View style={styles.row}>
+          <Text style={styles.label}>Income</Text>
+          <Text style={[styles.value, styles.incomeValue]}>{formatCurrency(income, currency)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Fixed Expenses</Text>
+          <Text style={styles.value}>{formatCurrency(fixedTotal, currency)}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.label}>Spent</Text>
+          <Text style={[styles.value, { color: spentColor }]}>{formatCurrency(variableSpent, currency)}</Text>
+        </View>
+        <View style={styles.divider} />
+        <View style={styles.row}>
+          <Text style={styles.remainingLabel}>Remaining</Text>
+          <Text style={[styles.remainingValue, { color: getAmountColor(remaining) }]}>
+            {formatCurrency(remaining, currency)}
+          </Text>
+        </View>
       </View>
     </Card>
   );
@@ -33,14 +51,43 @@ export function DashboardCard({
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "800",
-    marginBottom: 10
+    marginBottom: 12,
+    color: colors.text
   },
   grid: {
-    gap: 6
+    gap: 8
   },
-  remaining: {
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
+  label: {
+    color: colors.textMuted,
+    fontSize: 13
+  },
+  value: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 16
+  },
+  incomeValue: {
+    color: colors.success
+  },
+  divider: {
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    marginVertical: 2
+  },
+  remainingLabel: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 14
+  },
+  remainingValue: {
+    fontSize: 18,
     fontWeight: "800"
   }
 });

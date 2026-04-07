@@ -1,7 +1,9 @@
 import React from "react";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { CategoryCard } from "@/components/budget/CategoryCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { colors } from "@/constants/colors";
+import { spacing } from "@/constants/layout";
 import { UserCategorySnapshot } from "@/types";
 
 interface CategoryListProps {
@@ -20,15 +22,15 @@ export function CategoryList({
   onAddTransaction
 }: CategoryListProps): React.JSX.Element {
   return (
-    <View style={{ gap: 10 }}>
-      <Text>Budget Categories</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Budget Categories</Text>
       {snapshots.length === 0 ? (
         <EmptyState
           title="No categories yet"
           subtitle="Add categories in settings to begin tracking your budget."
         />
       ) : (
-        <View style={{ gap: 10 }}>
+        <View style={styles.list}>
           {snapshots.map((item) => (
             <CategoryCard
               key={item.categoryId}
@@ -50,3 +52,17 @@ export function CategoryList({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    gap: spacing.sm
+  },
+  title: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "800"
+  },
+  list: {
+    gap: spacing.sm
+  }
+});

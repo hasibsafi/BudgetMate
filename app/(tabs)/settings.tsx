@@ -43,7 +43,6 @@ export default function SettingsScreen(): React.JSX.Element {
         {isLoading && <ActivityIndicator />}
         <SettingsSection title="Account">
           <SettingsRow label="Email" value={user?.email || "-"} />
-          <SettingsRow label="User ID" value={user?.uid || "-"} />
           <SettingsRow label="Name" value={profile?.name || "-"} />
           <SettingsRow label="Session" value="Authenticated" rightElement={undefined} />
         </SettingsSection>

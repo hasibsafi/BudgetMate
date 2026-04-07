@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,6 +19,17 @@ export default function FinancesScreen(): React.JSX.Element {
   const { settings, isLoading, loadSettings, updateSettings } = useSettingsStore();
   const { categories, loadCategories, currentMonthKey, refreshTotals } = useBudgetStore();
   const [income, setIncome] = useState("");
+  const [isSavingIncome, setIsSavingIncome] = useState(false);
+  const [incomeSaveStatus, setIncomeSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const incomeSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (incomeSaveTimeoutRef.current) {
+        clearTimeout(incomeSaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (user?.uid) {
@@ -35,16 +46,36 @@ export default function FinancesScreen(): React.JSX.Element {
   const budgetCategories = useMemo(() => categories.filter((item) => item.type === "budgeted"), [categories]);
 
   const handleSaveIncome = async (): Promise<void> => {
-    if (!user?.uid) {
+    if (!user?.uid || isSavingIncome) {
       return;
     }
+
     const monthlyIncome = Number(income);
     if (Number.isNaN(monthlyIncome)) {
+      setIncomeSaveStatus("error");
       return;
     }
-    await updateSettings(user.uid, { monthlyIncome });
-    await updateMonthIncome(user.uid, currentMonthKey, monthlyIncome);
-    await refreshTotals(user.uid, currentMonthKey);
+
+    setIsSavingIncome(true);
+    setIncomeSaveStatus("idle");
+
+    if (incomeSaveTimeoutRef.current) {
+      clearTimeout(incomeSaveTimeoutRef.current);
+    }
+
+    try {
+      await updateSettings(user.uid, { monthlyIncome });
+      await updateMonthIncome(user.uid, currentMonthKey, monthlyIncome);
+      await refreshTotals(user.uid, currentMonthKey);
+      setIncomeSaveStatus("saved");
+      incomeSaveTimeoutRef.current = setTimeout(() => {
+        setIncomeSaveStatus("idle");
+      }, 2000);
+    } catch {
+      setIncomeSaveStatus("error");
+    } finally {
+      setIsSavingIncome(false);
+    }
   };
 
   const handleCategoriesChanged = async (): Promise<void> => {
@@ -65,7 +96,21 @@ export default function FinancesScreen(): React.JSX.Element {
 
         <SettingsSection title="Income">
           <Input label="Monthly Income" value={income} onChangeText={setIncome} keyboardType="numeric" />
-          <Button title="Save Income" onPress={() => void handleSaveIncome()} />
+          <Button
+            title={isSavingIncome ? "Saving..." : "Save Income"}
+            onPress={() => void handleSaveIncome()}
+            disabled={isSavingIncome}
+          />
+          {isSavingIncome && (
+            <View style={styles.feedbackRow}>
+              <ActivityIndicator size="small" />
+              <Text style={styles.feedbackText}>Saving income...</Text>
+            </View>
+          )}
+          {incomeSaveStatus === "saved" && <Text style={styles.successText}>Income updated.</Text>}
+          {incomeSaveStatus === "error" && (
+            <Text style={styles.errorText}>Couldn't save income. Please try again.</Text>
+          )}
         </SettingsSection>
 
         <SettingsSection title="Currency">
@@ -138,5 +183,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8
+  },
+  feedbackRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  feedbackText: {
+    color: "#607180",
+    fontWeight: "600"
+  },
+  successText: {
+    color: "#22A06B",
+    fontWeight: "700"
+  },
+  errorText: {
+    color: "#D14343",
+    fontWeight: "700"
   }
 });
