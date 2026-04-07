@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { Button } from "@/components/ui/Button";
 import { getStatusColor, formatCurrency } from "@/utils/budget";
 import { UserCategorySnapshot } from "@/types";
 
@@ -10,13 +11,22 @@ interface CategoryCardProps {
   snapshot: UserCategorySnapshot;
   currency?: string;
   onPress?: () => void;
+  showAddTransaction?: boolean;
+  onAddTransaction?: () => void;
 }
 
-export function CategoryCard({ snapshot, currency, onPress }: CategoryCardProps): React.JSX.Element {
+export function CategoryCard({
+  snapshot,
+  currency,
+  onPress,
+  showAddTransaction,
+  onAddTransaction
+}: CategoryCardProps): React.JSX.Element {
   const color = getStatusColor(snapshot.spent, snapshot.adjustedBudget);
+
   return (
-    <Pressable onPress={onPress}>
-      <Card style={styles.card}>
+    <Card style={styles.card}>
+      <View style={styles.detailsContent}>
         <View style={styles.header}>
           <Text style={styles.name}>{snapshot.categoryName}</Text>
           <StatusBadge label={snapshot.type} color={color} />
@@ -27,13 +37,20 @@ export function CategoryCard({ snapshot, currency, onPress }: CategoryCardProps)
         <Text>Spent: {formatCurrency(snapshot.spent, currency)}</Text>
         <Text>Remaining: {formatCurrency(snapshot.remaining, currency)}</Text>
         <ProgressBar value={snapshot.spent} max={snapshot.adjustedBudget} color={color} />
-      </Card>
-    </Pressable>
+      </View>
+      {onPress && <Button title="Details" variant="secondary" onPress={onPress} />}
+      {showAddTransaction && onAddTransaction && (
+        <Button title="Add Transaction" onPress={onAddTransaction} />
+      )}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    gap: 6
+  },
+  detailsContent: {
     gap: 6
   },
   header: {

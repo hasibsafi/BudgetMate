@@ -108,6 +108,7 @@ export default function HomeScreen(): React.JSX.Element {
         <CategoryList
           snapshots={snapshotList}
           currency={settings?.currency}
+          showAddTransaction={!isPartnerView}
           onSelect={(snapshot) =>
             router.push({
               pathname: "/category/[id]",
@@ -116,6 +117,15 @@ export default function HomeScreen(): React.JSX.Element {
                 isPartnerView: String(isPartnerView),
                 monthKey,
                 dataOwnerId: isPartnerView ? partnerId : userId
+              }
+            })
+          }
+          onAddTransaction={(snapshot) =>
+            router.push({
+              pathname: "/modals/transaction",
+              params: {
+                categoryId: snapshot.categoryId,
+                monthKey
               }
             })
           }

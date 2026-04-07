@@ -8,9 +8,17 @@ interface CategoryListProps {
   snapshots: UserCategorySnapshot[];
   currency?: string;
   onSelect: (snapshot: UserCategorySnapshot) => void;
+  showAddTransaction?: boolean;
+  onAddTransaction?: (snapshot: UserCategorySnapshot) => void;
 }
 
-export function CategoryList({ snapshots, currency, onSelect }: CategoryListProps): React.JSX.Element {
+export function CategoryList({
+  snapshots,
+  currency,
+  onSelect,
+  showAddTransaction,
+  onAddTransaction
+}: CategoryListProps): React.JSX.Element {
   return (
     <View style={{ gap: 10 }}>
       <Text>Budget Categories</Text>
@@ -27,6 +35,14 @@ export function CategoryList({ snapshots, currency, onSelect }: CategoryListProp
               snapshot={item}
               currency={currency}
               onPress={() => onSelect(item)}
+              showAddTransaction={showAddTransaction}
+              onAddTransaction={
+                onAddTransaction
+                  ? () => {
+                      onAddTransaction(item);
+                    }
+                  : undefined
+              }
             />
           ))}
         </View>

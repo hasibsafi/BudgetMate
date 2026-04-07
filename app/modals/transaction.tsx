@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -20,6 +20,7 @@ export default function TransactionModalScreen(): React.JSX.Element {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [oldAmount, setOldAmount] = useState(0);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!userId || !transactionId) {
@@ -36,6 +37,9 @@ export default function TransactionModalScreen(): React.JSX.Element {
   }, [getTransaction, transactionId, userId]);
 
   const onSave = async (): Promise<void> => {
+    if (isSaving) {
+      return;
+    }
     const amountError = validateAmount(amount);
     if (amountError) {
       Alert.alert("Invalid amount", amountError);
@@ -44,6 +48,7 @@ export default function TransactionModalScreen(): React.JSX.Element {
     if (!userId) {
       return;
     }
+    setIsSaving(true);
     try {
       if (transactionId) {
         await editTransaction(userId, transactionId, oldAmount, {
@@ -63,21 +68,34 @@ export default function TransactionModalScreen(): React.JSX.Element {
       router.back();
     } catch (error) {
       Alert.alert("Save failed", (error as Error).message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
       <View style={styles.navRow}>
-        <Button title="Back" variant="secondary" onPress={() => router.back()} />
-        <Button title="Home" variant="secondary" onPress={() => router.replace("/(tabs)/home")} />
+        <Button title="Back" variant="secondary" onPress={() => router.back()} disabled={isSaving} />
+        <Button
+          title="Home"
+          variant="secondary"
+          onPress={() => router.replace("/(tabs)/home")}
+          disabled={isSaving}
+        />
       </View>
       <Text style={styles.title}>{transactionId ? "Edit Transaction" : "Add Transaction"}</Text>
       {!!monthKey && <Text style={styles.monthKey}>Month: {monthKey}</Text>}
       <Input label="Amount" value={amount} onChangeText={setAmount} keyboardType="numeric" />
       <Input label="Note" value={note} onChangeText={setNote} />
-      <Button title="Save" onPress={onSave} />
-      <Button title="Cancel" variant="secondary" onPress={() => router.back()} />
+      <Button title={isSaving ? "Saving..." : "Save"} onPress={onSave} disabled={isSaving} />
+      {isSaving && (
+        <View style={styles.savingRow}>
+          <ActivityIndicator size="small" />
+          <Text style={styles.savingText}>Saving transaction...</Text>
+        </View>
+      )}
+      <Button title="Cancel" variant="secondary" onPress={() => router.back()} disabled={isSaving} />
     </SafeAreaView>
   );
 }
@@ -98,6 +116,14 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   monthKey: {
+    color: "#617481"
+  },
+  savingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
+  },
+  savingText: {
     color: "#617481"
   }
 });
