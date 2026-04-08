@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Switch } from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useRouter } from "expo-router";
 import { SettingsSection } from "@/components/settings/SettingsSection";
@@ -14,8 +14,10 @@ export default function SettingsScreen(): React.JSX.Element {
   const user = useAuthStore((state) => state.firebaseUser);
   const profile = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
+  const deleteAccount = useAuthStore((state) => state.deleteAccount);
   const { settings, isLoading, loadSettings, updateSettings } = useSettingsStore();
   const { household, partnerName, loadHousehold } = useHouseholdStore();
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     if (user?.uid) {
@@ -36,6 +38,32 @@ export default function SettingsScreen(): React.JSX.Element {
       }
     }, [loadHousehold, profile?.householdId, user?.uid])
   );
+
+  const handleDeleteAccount = (): void => {
+    Alert.alert(
+      "Delete account?",
+      "This will permanently delete your account and all your budget data. This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              setIsDeletingAccount(true);
+              try {
+                await deleteAccount();
+              } catch (error) {
+                Alert.alert("Delete failed", (error as Error).message);
+              } finally {
+                setIsDeletingAccount(false);
+              }
+            })();
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
@@ -74,8 +102,22 @@ export default function SettingsScreen(): React.JSX.Element {
           />
         </SettingsSection>
 
+        <SettingsSection title="Danger Zone">
+          <Button
+            title={isDeletingAccount ? "Deleting Account..." : "Delete Account"}
+            variant="destructive"
+            disabled={isDeletingAccount}
+            onPress={handleDeleteAccount}
+          />
+        </SettingsSection>
+
         <SettingsSection title="Session">
-          <Button title="Sign Out" variant="destructive" onPress={() => void signOut()} />
+          <Button
+            title="Sign Out"
+            variant="destructive"
+            disabled={isDeletingAccount}
+            onPress={() => void signOut()}
+          />
         </SettingsSection>
       </ScrollView>
     </SafeAreaView>

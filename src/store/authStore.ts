@@ -1,13 +1,17 @@
 import { create } from "zustand";
 import {
+  GoogleAuthProvider,
   User as FirebaseUser,
   createUserWithEmailAndPassword,
+  deleteUser,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
-  signOut
+  signOut as firebaseSignOut
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/services/firebase/config";
-import { createUser, getUser } from "@/services/firestore/users";
+import { getGoogleIdToken, signOutGoogle } from "@/services/firebase/googleAuth";
+import { createUser, deleteUserData, getUser } from "@/services/firestore/users";
 import { User } from "@/types";
 
 interface AuthState {
@@ -19,11 +23,13 @@ interface AuthState {
   refreshUserProfile: () => Promise<void>;
   initializeAuth: () => void;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   firebaseUser: null,
   user: null,
   isLoading: true,
@@ -65,6 +71,27 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
+  signInWithGoogle: async () => {
+    if (!isFirebaseConfigured || !auth) {
+      throw new Error("Firebase is not configured. Update src/services/firebase/config.ts");
+    }
+    if (!process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID) {
+      throw new Error("Missing EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in your .env file.");
+    }
+
+    const idToken = await getGoogleIdToken();
+    const credential = GoogleAuthProvider.credential(idToken);
+    const result = await signInWithCredential(auth, credential);
+
+    const existingUser = await getUser(result.user.uid);
+    if (!existingUser) {
+      const fallbackName = result.user.displayName || result.user.email?.split("@")[0] || "User";
+      await createUser(result.user.uid, {
+        email: result.user.email || "",
+        name: fallbackName
+      });
+    }
+  },
   signUp: async (email, password, name) => {
     if (!isFirebaseConfigured || !auth) {
       throw new Error("Firebase is not configured. Update src/services/firebase/config.ts");
@@ -82,11 +109,39 @@ export const useAuthStore = create<AuthState>((set) => ({
       throw error;
     }
   },
+  deleteAccount: async () => {
+    if (!isFirebaseConfigured || !auth || !auth.currentUser) {
+      throw new Error("You must be signed in to delete your account.");
+    }
+
+    const currentUser = auth.currentUser;
+    const lastSignIn = currentUser.metadata.lastSignInTime
+      ? new Date(currentUser.metadata.lastSignInTime).getTime()
+      : 0;
+
+    if (!lastSignIn || Date.now() - lastSignIn > 10 * 60 * 1000) {
+      throw new Error("For security, please sign out and sign back in before deleting your account.");
+    }
+
+    try {
+      const profile = get().user || (await getUser(currentUser.uid));
+      await deleteUserData(currentUser.uid, profile?.householdId ?? null);
+      await deleteUser(currentUser);
+      set({ firebaseUser: null, user: null, isAuthenticated: false, isLoading: false });
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code === "auth/requires-recent-login") {
+        throw new Error("For security, please sign out and sign back in before deleting your account.");
+      }
+      throw error;
+    }
+  },
   signOut: async () => {
     if (!isFirebaseConfigured || !auth) {
       set({ firebaseUser: null, user: null, isAuthenticated: false, isLoading: false });
       return;
     }
-    await signOut(auth);
+    await signOutGoogle().catch(() => undefined);
+    await firebaseSignOut(auth);
   }
 }));
