@@ -9,7 +9,8 @@
     "android": "expo run:android",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "eas-build-pre-install": "node -e \"const fs=require('fs'),src=process.env.GOOGLE_SERVICES_FILE_IOS;if(src&&fs.existsSync(src)){fs.copyFileSync(src,'./GoogleService-Info.plist');console.log('Copied GoogleService-Info.plist from EAS secret.');}else{console.log('GOOGLE_SERVICES_FILE_IOS not set, skipping.');}\""
   },
   "dependencies": {
     "@expo/vector-icons": "~14.0.4",
