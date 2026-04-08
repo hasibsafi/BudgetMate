@@ -15,7 +15,11 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.intoku.budgetmate",
-      "icon": "./assets/icon.png"
+      "icon": "./assets/icon.png",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
