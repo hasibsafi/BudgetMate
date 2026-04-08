@@ -7,16 +7,28 @@ import { Input } from "@/components/ui/Input";
 import { useAuthStore } from "@/store/authStore";
 
 export default function RegisterScreen(): React.JSX.Element {
-  const { signUp } = useAuthStore();
+  const { signUp, signInWithGoogle } = useAuthStore();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const onSubmit = async (): Promise<void> => {
     try {
       await signUp(email.trim(), password, name.trim());
     } catch (error) {
       Alert.alert("Registration failed", (error as Error).message);
+    }
+  };
+
+  const onGoogleSubmit = async (): Promise<void> => {
+    setIsGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      Alert.alert("Google sign-up failed", (error as Error).message);
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -27,6 +39,12 @@ export default function RegisterScreen(): React.JSX.Element {
       <Input label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <Input label="Password" value={password} onChangeText={setPassword} secureTextEntry />
       <Button title="Sign Up" onPress={onSubmit} />
+      <Button
+        title={isGoogleLoading ? "Connecting Google..." : "Sign up with Google"}
+        variant="secondary"
+        onPress={() => void onGoogleSubmit()}
+        disabled={isGoogleLoading}
+      />
       <Link href="/(auth)/login" style={styles.link}>
         Already have an account?
       </Link>
