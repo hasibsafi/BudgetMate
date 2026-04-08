@@ -21,7 +21,7 @@ export default function RootLayout(): React.JSX.Element {
     }
 
     const inAuthGroup = segments[0] === "(auth)";
-    const onOnboarding = segments.includes("onboarding");
+    const onOnboarding = (segments as string[]).includes("onboarding");
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/login");

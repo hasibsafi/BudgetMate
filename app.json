@@ -16,7 +16,10 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.intoku.budgetmate",
       "icon": "./assets/icon.png",
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -38,6 +41,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "92c2bdeb-2944-4a34-8f1c-d3953fad9cc9"
+      }
     }
   }
 }
