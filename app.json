@@ -22,7 +22,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#F5F7F8"
-      }
+      },
+      "package": "com.intoku.budgetmate"
     },
     "plugins": [
       "expo-router",
