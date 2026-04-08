@@ -15,7 +15,9 @@
     },
     "production": {
       "autoIncrement": true,
-      "prebuildCommand": "expo prebuild --clean"
+      "prebuildCommand": "expo prebuild --clean",
+      "environment": "production",
+      "image": "latest"
     }
   },
   "submit": {
