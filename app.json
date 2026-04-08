@@ -4,6 +4,7 @@
     "slug": "budgetmate",
     "newArchEnabled": true,
     "scheme": "budgetmate",
+    "icon": "./assets/icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -13,11 +14,13 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.example.budgetmate",
+      "bundleIdentifier": "com.intoku.budgetmate",
+      "icon": "./assets/icon.png",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#F5F7F8"
       }
     },
@@ -25,7 +28,12 @@
       "expo-router",
       "expo-asset",
       "expo-font",
-      "@react-native-google-signin/google-signin"
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.612507726182-e6116gseojg2jsv4dbhde5tqao47br4f"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

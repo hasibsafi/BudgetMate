@@ -1,5 +1,3 @@
-import { NativeModules } from "react-native";
-
 type GoogleSigninInstance = {
   configure: (options: { webClientId?: string }) => void;
   hasPlayServices: (options?: { showPlayServicesUpdateDialog?: boolean }) => Promise<boolean>;
@@ -10,13 +8,6 @@ type GoogleSigninInstance = {
 let configured = false;
 
 function getGoogleSignin(): GoogleSigninInstance {
-  const rnGoogleSigninModule = (NativeModules as Record<string, unknown>).RNGoogleSignin;
-  if (!rnGoogleSigninModule) {
-    throw new Error(
-      "Google Sign-In requires a native development build. Rebuild the iOS app (not Expo Go) and try again."
-    );
-  }
-
   try {
     const googleModule = require("@react-native-google-signin/google-signin") as {
       GoogleSignin?: GoogleSigninInstance;
