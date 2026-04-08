@@ -10,7 +10,7 @@ import {
   signOut as firebaseSignOut
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "@/services/firebase/config";
-import { getGoogleIdToken, signOutGoogle } from "@/services/firebase/googleAuth";
+import { getGoogleIdToken } from "@/services/firebase/googleAuth";
 import { createUser, deleteUserData, getUser } from "@/services/firestore/users";
 import { User } from "@/types";
 
@@ -141,7 +141,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ firebaseUser: null, user: null, isAuthenticated: false, isLoading: false });
       return;
     }
-    await signOutGoogle().catch(() => undefined);
     await firebaseSignOut(auth);
   }
 }));
