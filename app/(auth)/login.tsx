@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "expo-router";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -33,6 +33,7 @@ export default function LoginScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView style={styles.inner} behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <Text style={styles.title}>BudgetMate</Text>
       <Input label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
       <Input label="Password" value={password} onChangeText={setPassword} secureTextEntry />
@@ -46,6 +47,7 @@ export default function LoginScreen(): React.JSX.Element {
       <Link href="/(auth)/register" style={styles.link}>
         Create an account
       </Link>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -53,10 +55,13 @@ export default function LoginScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F6F8F9"
+  },
+  inner: {
+    flex: 1,
     justifyContent: "center",
     padding: 20,
-    gap: 14,
-    backgroundColor: "#F6F8F9"
+    gap: 14
   },
   title: {
     fontSize: 28,

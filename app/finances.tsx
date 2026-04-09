@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { SettingsSection } from "@/components/settings/SettingsSection";
@@ -91,7 +91,8 @@ export default function FinancesScreen(): React.JSX.Element {
         <Button title="Back" variant="secondary" onPress={() => router.back()} />
       </View>
       <Text style={styles.title}>Finance Settings</Text>
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         {isLoading && <ActivityIndicator />}
 
         <SettingsSection title="Income">
@@ -155,6 +156,7 @@ export default function FinancesScreen(): React.JSX.Element {
           )}
         </SettingsSection>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -164,6 +166,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F6F8F9",
     padding: 16
+  },
+  flex: {
+    flex: 1
   },
   navRow: {
     flexDirection: "row",

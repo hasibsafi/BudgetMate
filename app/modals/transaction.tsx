@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -75,6 +75,8 @@ export default function TransactionModalScreen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.screen} edges={["top", "left", "right"]}>
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
       <View style={styles.navRow}>
         <Button title="Back" variant="secondary" onPress={() => router.back()} disabled={isSaving} />
         <Button
@@ -96,6 +98,8 @@ export default function TransactionModalScreen(): React.JSX.Element {
         </View>
       )}
       <Button title="Cancel" variant="secondary" onPress={() => router.back()} disabled={isSaving} />
+      </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -103,9 +107,15 @@ export default function TransactionModalScreen(): React.JSX.Element {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: "#FFFFFF"
+  },
+  flex: {
+    flex: 1
+  },
+  scrollContent: {
     padding: 16,
     gap: 12,
-    backgroundColor: "#FFFFFF"
+    paddingBottom: 40
   },
   navRow: {
     flexDirection: "row",
