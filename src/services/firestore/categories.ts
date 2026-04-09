@@ -76,8 +76,20 @@ export async function updateUserCategory(
   });
 }
 
-export async function deleteUserCategory(userId: string, categoryId: string): Promise<void> {
-  await deleteDoc(doc(db, "users", userId, "categories", categoryId));
+export async function deleteUserCategory(
+  userId: string,
+  categoryId: string,
+  monthKey?: string
+): Promise<void> {
+  if (!monthKey) {
+    await deleteDoc(doc(db, "users", userId, "categories", categoryId));
+    return;
+  }
+
+  const batch = writeBatch(db);
+  batch.delete(doc(db, "users", userId, "categories", categoryId));
+  batch.delete(doc(db, "users", userId, "months", monthKey, "categorySnapshots", categoryId));
+  await batch.commit();
 }
 
 export async function copyTemplatesToUser(

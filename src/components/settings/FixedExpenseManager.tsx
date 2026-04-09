@@ -7,11 +7,17 @@ import { UserCategory } from "@/types";
 
 interface FixedExpenseManagerProps {
   userId: string;
+  monthKey: string;
   categories: UserCategory[];
   onChanged: () => Promise<void>;
 }
 
-export function FixedExpenseManager({ userId, categories, onChanged }: FixedExpenseManagerProps): React.JSX.Element {
+export function FixedExpenseManager({
+  userId,
+  monthKey,
+  categories,
+  onChanged
+}: FixedExpenseManagerProps): React.JSX.Element {
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,7 +44,7 @@ export function FixedExpenseManager({ userId, categories, onChanged }: FixedExpe
   };
 
   const onDelete = async (categoryId: string): Promise<void> => {
-    await deleteUserCategory(userId, categoryId);
+    await deleteUserCategory(userId, categoryId, monthKey);
     await onChanged();
   };
 

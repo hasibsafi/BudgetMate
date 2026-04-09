@@ -9,6 +9,24 @@ import { useAuthStore } from "@/store/authStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useHouseholdStore } from "@/store/householdStore";
 
+function getDeleteErrorMessage(error: unknown): string {
+  const code = (error as { code?: string })?.code;
+
+  if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+    return "Incorrect password. Please try again.";
+  }
+
+  if (code === "auth/requires-recent-login") {
+    return "Please verify your account and try deleting again.";
+  }
+
+  if (code === "SIGN_IN_CANCELLED") {
+    return "Account verification was canceled.";
+  }
+
+  return (error as Error).message;
+}
+
 export default function SettingsScreen(): React.JSX.Element {
   const router = useRouter();
   const user = useAuthStore((state) => state.firebaseUser);
@@ -54,7 +72,40 @@ export default function SettingsScreen(): React.JSX.Element {
               try {
                 await deleteAccount();
               } catch (error) {
-                Alert.alert("Delete failed", (error as Error).message);
+                if ((error as Error).message === "NEEDS_PASSWORD") {
+                  Alert.prompt(
+                    "Verify password",
+                    "For security, enter your password to delete your account.",
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: (password) => {
+                          if (!password) {
+                            Alert.alert("Delete failed", "Password is required to continue.");
+                            return;
+                          }
+
+                          void (async () => {
+                            setIsDeletingAccount(true);
+                            try {
+                              await deleteAccount(password);
+                            } catch (passwordError) {
+                              Alert.alert("Delete failed", getDeleteErrorMessage(passwordError));
+                            } finally {
+                              setIsDeletingAccount(false);
+                            }
+                          })();
+                        }
+                      }
+                    ],
+                    "secure-text"
+                  );
+                  return;
+                }
+
+                Alert.alert("Delete failed", getDeleteErrorMessage(error));
               } finally {
                 setIsDeletingAccount(false);
               }

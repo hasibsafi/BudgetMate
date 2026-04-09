@@ -4,10 +4,11 @@ import { CategoryCard } from "@/components/budget/CategoryCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { colors } from "@/constants/colors";
 import { spacing } from "@/constants/layout";
-import { UserCategorySnapshot } from "@/types";
+import { Transaction, UserCategorySnapshot } from "@/types";
 
 interface CategoryListProps {
   snapshots: UserCategorySnapshot[];
+  transactions?: Record<string, Transaction[]>;
   currency?: string;
   onSelect: (snapshot: UserCategorySnapshot) => void;
   showAddTransaction?: boolean;
@@ -16,25 +17,29 @@ interface CategoryListProps {
 
 export function CategoryList({
   snapshots,
+  transactions,
   currency,
   onSelect,
   showAddTransaction,
   onAddTransaction
 }: CategoryListProps): React.JSX.Element {
+  const budgetedSnapshots = snapshots.filter((snapshot) => snapshot.type === "budgeted");
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Budget Categories</Text>
-      {snapshots.length === 0 ? (
+      {budgetedSnapshots.length === 0 ? (
         <EmptyState
           title="No categories yet"
           subtitle="Add categories in settings to begin tracking your budget."
         />
       ) : (
         <View style={styles.list}>
-          {snapshots.map((item) => (
+          {budgetedSnapshots.map((item) => (
             <CategoryCard
               key={item.categoryId}
               snapshot={item}
+              transactions={transactions?.[item.categoryId] || []}
               currency={currency}
               onPress={() => onSelect(item)}
               showAddTransaction={showAddTransaction}

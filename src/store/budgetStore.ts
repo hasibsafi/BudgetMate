@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { getUserCategories } from "@/services/firestore/categories";
 import {
+  cleanupOrphanedSnapshots,
   getCategorySnapshots,
   getUserMonth,
   initializeMonth,
@@ -57,6 +58,13 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   loadCategories: async (userId) => {
     const categories = await getUserCategories(userId);
     set({ categories });
+
+    const { currentMonthKey } = get();
+    await cleanupOrphanedSnapshots(
+      userId,
+      currentMonthKey,
+      categories.map((category) => category.id)
+    );
   },
   loadCategorySnapshots: async (userId, monthKey) => {
     const snapshots = await getCategorySnapshots(userId, monthKey);

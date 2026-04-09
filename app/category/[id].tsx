@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, Alert, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
@@ -11,8 +11,8 @@ import { useSettingsStore } from "@/store/settingsStore";
 import { useAuthStore } from "@/store/authStore";
 import { useTransactionStore } from "@/store/transactionStore";
 import { getCategorySnapshots } from "@/services/firestore/months";
-import { UserCategorySnapshot } from "@/types";
-import { getMonthDateRange } from "@/utils/date";
+import { Transaction, UserCategorySnapshot } from "@/types";
+import { getCurrentMonthKey, getMonthDateRange } from "@/utils/date";
 
 export default function CategoryDetailScreen(): React.JSX.Element {
   const router = useRouter();
@@ -27,19 +27,26 @@ export default function CategoryDetailScreen(): React.JSX.Element {
   const currentMonthKey = useBudgetStore((state) => state.currentMonthKey);
   const ownSnapshot = useBudgetStore((state) => state.categorySnapshots[id]);
   const partnerSnapshot = usePartnerStore((state) => state.partnerSnapshots[id]);
-  const { transactions, isLoading, loadTransactions, deleteTransaction } = useTransactionStore();
+  const {
+    monthTransactions,
+    isLoading,
+    loadMonthTransactions,
+    deleteTransaction
+  } = useTransactionStore();
   const [historySnapshot, setHistorySnapshot] = useState<UserCategorySnapshot | null>(null);
   const readOnly = isPartnerView === "true";
   const activeMonthKey = monthKey || currentMonthKey;
   const activeOwnerId = dataOwnerId || userId;
 
-  useEffect(() => {
-    if (!activeOwnerId || !id) {
-      return;
-    }
-    const range = getMonthDateRange(activeMonthKey);
-    loadTransactions(activeOwnerId, id, range.start, range.end);
-  }, [activeMonthKey, activeOwnerId, id, loadTransactions]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!activeOwnerId || !id) {
+        return;
+      }
+      const range = getMonthDateRange(activeMonthKey);
+      void loadMonthTransactions(activeOwnerId, range.start, range.end);
+    }, [activeMonthKey, activeOwnerId, id, loadMonthTransactions])
+  );
 
   useEffect(() => {
     if (!activeOwnerId || !id || activeMonthKey === currentMonthKey) {
@@ -59,6 +66,14 @@ export default function CategoryDetailScreen(): React.JSX.Element {
     }
     return ownSnapshot;
   }, [activeMonthKey, currentMonthKey, historySnapshot, ownSnapshot, partnerSnapshot, readOnly]);
+
+  const categoryTransactions = useMemo(
+    () =>
+      monthTransactions.filter((transaction: Transaction) => {
+        return transaction.categoryId === id;
+      }),
+    [id, monthTransactions]
+  );
 
   if (!header) {
     return <View style={styles.screen} />;
@@ -84,24 +99,47 @@ export default function CategoryDetailScreen(): React.JSX.Element {
       )}
       {isLoading && <ActivityIndicator />}
       <TransactionList
-        transactions={transactions}
+        transactions={categoryTransactions}
         currency={currency}
         readOnly={readOnly}
         onEdit={(transaction) =>
           router.push({
             pathname: "/modals/transaction",
-            params: { categoryId: id, transactionId: transaction.id, monthKey: activeMonthKey }
+            params: {
+              categoryId: transaction.categoryId,
+              transactionId: transaction.id,
+              monthKey: activeMonthKey
+            }
           })
         }
         onDelete={async (transaction) => {
           if (!activeOwnerId) {
             return;
           }
-          try {
-            await deleteTransaction(activeOwnerId, transaction.id, id, transaction.amount, activeMonthKey);
-          } catch (error) {
-            Alert.alert("Delete failed", (error as Error).message);
-          }
+          Alert.alert("Delete transaction?", "This action cannot be undone.", [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Delete",
+              style: "destructive",
+              onPress: () => {
+                void (async () => {
+                  try {
+                    const transactionDate = transaction.date?.toDate ? transaction.date.toDate() : new Date();
+                    const transactionMonthKey = getCurrentMonthKey(transactionDate);
+                    await deleteTransaction(
+                      activeOwnerId,
+                      transaction.id,
+                      transaction.categoryId,
+                      transaction.amount,
+                      transactionMonthKey
+                    );
+                  } catch (error) {
+                    Alert.alert("Delete failed", (error as Error).message);
+                  }
+                })();
+              }
+            }
+          ]);
         }}
       />
     </SafeAreaView>

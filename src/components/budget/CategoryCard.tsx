@@ -6,11 +6,12 @@ import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Button } from "@/components/ui/Button";
 import { colors } from "@/constants/colors";
 import { getStatusColor, formatCurrency, getAmountColor } from "@/utils/budget";
-import { UserCategorySnapshot } from "@/types";
+import { Transaction, UserCategorySnapshot } from "@/types";
 
 interface CategoryCardProps {
   snapshot: UserCategorySnapshot;
   currency?: string;
+  transactions?: Transaction[];
   onPress?: () => void;
   showAddTransaction?: boolean;
   onAddTransaction?: () => void;
@@ -19,6 +20,7 @@ interface CategoryCardProps {
 export function CategoryCard({
   snapshot,
   currency,
+  transactions,
   onPress,
   showAddTransaction,
   onAddTransaction
@@ -26,6 +28,13 @@ export function CategoryCard({
   const color = getStatusColor(snapshot.spent, snapshot.adjustedBudget);
   const carryoverColor = getAmountColor(snapshot.carryover);
   const remainingColor = getAmountColor(snapshot.remaining);
+  const recentTransactions = [...(transactions || [])]
+    .sort((a, b) => {
+      const aDate = a.date.toDate ? a.date.toDate().getTime() : 0;
+      const bDate = b.date.toDate ? b.date.toDate().getTime() : 0;
+      return bDate - aDate;
+    })
+    .slice(0, 3);
 
   return (
     <Card style={styles.card}>
@@ -45,10 +54,6 @@ export function CategoryCard({
           </Text>
         </View>
         <View style={styles.metricRow}>
-          <Text style={styles.metricLabel}>Adjusted</Text>
-          <Text style={styles.metricValue}>{formatCurrency(snapshot.adjustedBudget, currency)}</Text>
-        </View>
-        <View style={styles.metricRow}>
           <Text style={styles.metricLabel}>Spent</Text>
           <Text style={styles.metricValue}>{formatCurrency(snapshot.spent, currency)}</Text>
         </View>
@@ -59,6 +64,21 @@ export function CategoryCard({
           </Text>
         </View>
         <ProgressBar value={snapshot.spent} max={snapshot.adjustedBudget} color={color} />
+        <View style={styles.transactionSection}>
+          <Text style={styles.transactionTitle}>Transactions</Text>
+          {recentTransactions.length === 0 ? (
+            <Text style={styles.emptyTransactionText}>No transactions yet.</Text>
+          ) : (
+            recentTransactions.map((transaction) => (
+              <View key={transaction.id} style={styles.transactionRow}>
+                <Text style={styles.transactionAmount}>{formatCurrency(transaction.amount, currency)}</Text>
+                <Text style={styles.transactionNote} numberOfLines={1}>
+                  {transaction.note || "No note"}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
       </View>
       {onPress && <Button title="Details" variant="secondary" onPress={onPress} />}
       {showAddTransaction && onAddTransaction && (
@@ -101,5 +121,37 @@ const styles = StyleSheet.create({
   },
   remainingValue: {
     fontWeight: "700"
+  },
+  transactionSection: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 8,
+    gap: 6
+  },
+  transactionTitle: {
+    color: colors.text,
+    fontWeight: "700",
+    fontSize: 13
+  },
+  emptyTransactionText: {
+    color: colors.textMuted,
+    fontSize: 12
+  },
+  transactionRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8
+  },
+  transactionAmount: {
+    color: colors.text,
+    fontWeight: "600",
+    fontSize: 12
+  },
+  transactionNote: {
+    color: colors.textMuted,
+    fontSize: 12,
+    flex: 1,
+    textAlign: "right"
   }
 });

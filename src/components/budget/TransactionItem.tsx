@@ -1,6 +1,5 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Swipeable } from "react-native-gesture-handler";
 import { formatCurrency } from "@/utils/budget";
 import { Transaction } from "@/types";
 
@@ -36,21 +35,17 @@ export function TransactionItem({
   }
 
   return (
-    <Swipeable
-      overshootRight={false}
-      renderRightActions={() => (
-        <View style={styles.actions}>
-          <Pressable onPress={onEdit} style={[styles.actionButton, styles.editAction]}>
-            <Text style={styles.actionText}>Edit</Text>
-          </Pressable>
-          <Pressable onPress={onDelete} style={[styles.actionButton, styles.deleteAction]}>
-            <Text style={styles.actionText}>Delete</Text>
-          </Pressable>
-        </View>
-      )}
-    >
+    <View>
       {content}
-    </Swipeable>
+      <View style={styles.actions}>
+        <Pressable onPress={onEdit} style={[styles.actionButton, styles.editAction]}>
+          <Text style={styles.actionText}>Edit</Text>
+        </Pressable>
+        <Pressable onPress={onDelete} style={[styles.actionButton, styles.deleteAction]}>
+          <Text style={styles.actionText}>Delete</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
@@ -73,13 +68,16 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
-    alignItems: "stretch",
-    marginVertical: 4
+    justifyContent: "flex-end",
+    gap: 8,
+    marginBottom: 10
   },
   actionButton: {
     justifyContent: "center",
     alignItems: "center",
-    width: 72,
+    minWidth: 72,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8
   },
   editAction: {

@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   User as FirebaseUser,
   createUserWithEmailAndPassword,
   deleteUser,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   signInWithCredential,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut
@@ -13,6 +15,34 @@ import { auth, isFirebaseConfigured } from "@/services/firebase/config";
 import { getGoogleIdToken } from "@/services/firebase/googleAuth";
 import { createUser, deleteUserData, getUser } from "@/services/firestore/users";
 import { User } from "@/types";
+
+const NEEDS_PASSWORD_ERROR = "NEEDS_PASSWORD";
+
+async function reauthenticateForDelete(currentUser: FirebaseUser, password?: string): Promise<void> {
+  const hasGoogleProvider = currentUser.providerData.some((provider) => provider.providerId === "google.com");
+  if (hasGoogleProvider) {
+    const idToken = await getGoogleIdToken();
+    const credential = GoogleAuthProvider.credential(idToken);
+    await reauthenticateWithCredential(currentUser, credential);
+    return;
+  }
+
+  const hasPasswordProvider = currentUser.providerData.some((provider) => provider.providerId === "password");
+  if (hasPasswordProvider) {
+    if (!currentUser.email) {
+      throw new Error("Unable to verify your account email. Please sign out and sign back in.");
+    }
+    if (!password) {
+      throw new Error(NEEDS_PASSWORD_ERROR);
+    }
+
+    const credential = EmailAuthProvider.credential(currentUser.email, password);
+    await reauthenticateWithCredential(currentUser, credential);
+    return;
+  }
+
+  throw new Error("For security, please sign out and sign back in before deleting your account.");
+}
 
 interface AuthState {
   firebaseUser: FirebaseUser | null;
@@ -25,7 +55,7 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (password?: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -109,29 +139,33 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       throw error;
     }
   },
-  deleteAccount: async () => {
+  deleteAccount: async (password) => {
     if (!isFirebaseConfigured || !auth || !auth.currentUser) {
       throw new Error("You must be signed in to delete your account.");
     }
 
     const currentUser = auth.currentUser;
+    const profile = get().user || (await getUser(currentUser.uid));
     const lastSignIn = currentUser.metadata.lastSignInTime
       ? new Date(currentUser.metadata.lastSignInTime).getTime()
       : 0;
 
     if (!lastSignIn || Date.now() - lastSignIn > 10 * 60 * 1000) {
-      throw new Error("For security, please sign out and sign back in before deleting your account.");
+      await reauthenticateForDelete(currentUser, password);
     }
 
     try {
-      const profile = get().user || (await getUser(currentUser.uid));
       await deleteUserData(currentUser.uid, profile?.householdId ?? null);
       await deleteUser(currentUser);
       set({ firebaseUser: null, user: null, isAuthenticated: false, isLoading: false });
     } catch (error) {
       const code = (error as { code?: string })?.code;
       if (code === "auth/requires-recent-login") {
-        throw new Error("For security, please sign out and sign back in before deleting your account.");
+        await reauthenticateForDelete(currentUser, password);
+        await deleteUserData(currentUser.uid, profile?.householdId ?? null);
+        await deleteUser(currentUser);
+        set({ firebaseUser: null, user: null, isAuthenticated: false, isLoading: false });
+        return;
       }
       throw error;
     }

@@ -176,3 +176,23 @@ export function subscribeToCategorySnapshots(
     );
   });
 }
+
+export async function cleanupOrphanedSnapshots(
+  userId: string,
+  monthKey: string,
+  validCategoryIds: string[]
+): Promise<void> {
+  const snap = await getDocs(collection(db, "users", userId, "months", monthKey, "categorySnapshots"));
+  const validIds = new Set(validCategoryIds);
+  const orphans = snap.docs.filter((d) => !validIds.has(d.id));
+
+  if (orphans.length === 0) {
+    return;
+  }
+
+  const batch = writeBatch(db);
+  orphans.forEach((d) => {
+    batch.delete(d.ref);
+  });
+  await batch.commit();
+}

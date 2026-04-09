@@ -20,6 +20,7 @@ export default function TransactionModalScreen(): React.JSX.Element {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [oldAmount, setOldAmount] = useState(0);
+  const [transactionDate, setTransactionDate] = useState<Date | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export default function TransactionModalScreen(): React.JSX.Element {
       setAmount(String(transaction.amount));
       setNote(transaction.note || "");
       setOldAmount(transaction.amount);
+      setTransactionDate(transaction.date?.toDate ? transaction.date.toDate() : new Date());
     });
   }, [getTransaction, transactionId, userId]);
 
@@ -55,7 +57,7 @@ export default function TransactionModalScreen(): React.JSX.Element {
           categoryId,
           amount: Number(amount),
           note,
-          date: new Date()
+          date: transactionDate || new Date()
         });
       } else {
         await addTransaction(userId, {

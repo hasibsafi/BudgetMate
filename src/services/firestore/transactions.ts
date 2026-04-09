@@ -31,6 +31,20 @@ export async function getTransactions(
   return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, "id">) }));
 }
 
+export async function getMonthTransactions(
+  userId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<Transaction[]> {
+  const q = query(
+    collection(db, "users", userId, "transactions"),
+    where("date", ">=", Timestamp.fromDate(startDate)),
+    where("date", "<=", Timestamp.fromDate(endDate))
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Transaction, "id">) }));
+}
+
 export async function getTransactionById(
   userId: string,
   transactionId: string

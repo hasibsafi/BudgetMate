@@ -136,6 +136,7 @@ export default function FinancesScreen(): React.JSX.Element {
           {user?.uid ? (
             <FixedExpenseManager
               userId={user.uid}
+              monthKey={currentMonthKey}
               categories={fixedCategories}
               onChanged={handleCategoriesChanged}
             />
@@ -148,6 +149,7 @@ export default function FinancesScreen(): React.JSX.Element {
           {user?.uid ? (
             <CategoryManager
               userId={user.uid}
+              monthKey={currentMonthKey}
               categories={budgetCategories}
               onChanged={handleCategoriesChanged}
             />

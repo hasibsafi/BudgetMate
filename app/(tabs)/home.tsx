@@ -15,7 +15,9 @@ import { useBudgetStore } from "@/store/budgetStore";
 import { usePartnerStore } from "@/store/partnerStore";
 import { useHouseholdStore } from "@/store/householdStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { getCurrentMonthKey } from "@/utils/date";
+import { useTransactionStore } from "@/store/transactionStore";
+import { Transaction } from "@/types";
+import { getCurrentMonthKey, getMonthDateRange } from "@/utils/date";
 
 export default function HomeScreen(): React.JSX.Element {
   const router = useRouter();
@@ -37,19 +39,38 @@ export default function HomeScreen(): React.JSX.Element {
   const { partnerId, loadHousehold } = useHouseholdStore();
   const { partnerMonth, partnerSnapshots, loadPartnerData } = usePartnerStore();
   const { settings, loadSettings } = useSettingsStore();
+  const { monthTransactions, loadMonthTransactions } = useTransactionStore();
   const [refreshing, setRefreshing] = useState(false);
 
   const monthKey = getCurrentMonthKey();
+  const monthRange = useMemo(() => getMonthDateRange(monthKey), [monthKey]);
 
   useEffect(() => {
     if (!userId) {
       return;
     }
     initializeMonthIfNeeded(userId, monthKey)
-      .then(() => Promise.all([loadCategories(userId), loadMonth(userId, monthKey)]))
+      .then(() =>
+        Promise.all([
+          loadCategories(userId),
+          loadMonth(userId, monthKey),
+          loadMonthTransactions(userId, monthRange.start, monthRange.end)
+        ])
+      )
       .then(() => bindRealtimeMonth(userId, monthKey));
     return cleanup;
-  }, [bindRealtimeMonth, cleanup, initializeMonthIfNeeded, loadCategories, loadMonth, monthKey, userId]);
+  }, [
+    bindRealtimeMonth,
+    cleanup,
+    initializeMonthIfNeeded,
+    loadCategories,
+    loadMonth,
+    loadMonthTransactions,
+    monthKey,
+    monthRange.end,
+    monthRange.start,
+    userId
+  ]);
 
   useEffect(() => {
     if (!userId) {
@@ -74,6 +95,26 @@ export default function HomeScreen(): React.JSX.Element {
   const activeMonth = isPartnerView ? partnerMonth : currentMonth;
   const activeSnapshots = isPartnerView ? partnerSnapshots : categorySnapshots;
   const snapshotList = useMemo(() => Object.values(activeSnapshots), [activeSnapshots]);
+  const transactionsByCategory = useMemo(() => {
+    if (isPartnerView) {
+      return {} as Record<string, Transaction[]>;
+    }
+
+    const grouped: Record<string, Transaction[]> = {};
+    monthTransactions.forEach((transaction) => {
+      grouped[transaction.categoryId] = [...(grouped[transaction.categoryId] || []), transaction];
+    });
+
+    Object.keys(grouped).forEach((categoryId) => {
+      grouped[categoryId].sort((a, b) => {
+        const aDate = a.date.toDate ? a.date.toDate().getTime() : 0;
+        const bDate = b.date.toDate ? b.date.toDate().getTime() : 0;
+        return bDate - aDate;
+      });
+    });
+
+    return grouped;
+  }, [isPartnerView, monthTransactions]);
 
   const onRefresh = async (): Promise<void> => {
     if (!userId) {
@@ -84,6 +125,7 @@ export default function HomeScreen(): React.JSX.Element {
       loadCategories(userId),
       loadMonth(userId, monthKey),
       loadCategorySnapshots(userId, monthKey),
+      loadMonthTransactions(userId, monthRange.start, monthRange.end),
       loadSettings(userId),
       isPartnerView && partnerId ? loadPartnerData(partnerId, monthKey) : Promise.resolve()
     ]);
@@ -109,6 +151,7 @@ export default function HomeScreen(): React.JSX.Element {
         <FixedExpenseList snapshots={snapshotList} currency={settings?.currency} />
         <CategoryList
           snapshots={snapshotList}
+          transactions={transactionsByCategory}
           currency={settings?.currency}
           showAddTransaction={!isPartnerView}
           onSelect={(snapshot) =>
